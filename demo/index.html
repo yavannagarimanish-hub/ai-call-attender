@@ -45,10 +45,11 @@ async function callAI(){
 
 let msg=document.getElementById("msg").value;
 
-let res=await fetch(
-"http://127.0.0.1:8000/call?message="+msg,
-{method:"POST"}
-);
+let res=await fetch("http://127.0.0.1:8000/call", {
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:msg})
+});
 
 let data=await res.json();
 

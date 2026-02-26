@@ -1,43 +1,42 @@
+"""FastAPI application entrypoint."""
+
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="AI Call Attender")
+from backend.api.routes import router as api_router
+from backend.core.config import get_settings
+
+settings = get_settings()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    description="AI-powered call response assistant API.",
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=list(settings.cors_allow_origins),
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# simple AI logic
-def ai_response(message):
-
-    message = message.lower()
-
-    if "appointment" in message:
-        return "Your appointment request has been noted."
-
-    if "price" in message:
-        return "Our team will share pricing details shortly."
-
-    if "hello" in message:
-        return "Hello! How can I assist you today?"
-
-    return "Thank you for calling. Our team will contact you soon."
+app.include_router(api_router)
 
 
 @app.get("/")
-def home():
-    return {"AI": "Call Attender Running"}
+def home() -> dict[str, str]:
+    """Root endpoint exposing basic API metadata."""
 
-
-@app.post("/call")
-def attend_call(message: str):
-
-    reply = ai_response(message)
-
+    logger.info("Root endpoint accessed")
     return {
-        "caller_message": message,
-        "ai_response": reply
+        "service": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.environment,
+        "status": "running",
     }
