@@ -1,63 +1,605 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>AI Call Attender Demo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeaderOS — Constituency Governance Intelligence Platform</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --text: #2f3542;
+      --accent: #4a90e2;
+      --glass: rgba(255, 255, 255, 0.7);
+      --border: rgba(255, 255, 255, 0.55);
+      --shadow: 0 10px 30px rgba(28, 39, 58, 0.12);
+      --sidebar-width: 284px;
+      --sidebar-collapsed: 84px;
+      --radius: 18px;
+      --speed: 220ms;
+    }
 
-<style>
-body{
-font-family:Arial;
-background:#0f172a;
-color:white;
-text-align:center;
-margin-top:80px;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-input{
-padding:10px;
-width:300px;
-}
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 0% 0%, #f2f7ff 0%, var(--bg) 44%, #eef2f9 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
 
-button{
-padding:10px;
-background:#38bdf8;
-border:none;
-cursor:pointer;
-}
-</style>
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      height: 100vh;
+      transition: grid-template-columns var(--speed) ease;
+    }
 
+    .app-shell.sidebar-collapsed {
+      grid-template-columns: var(--sidebar-collapsed) 1fr;
+    }
+
+    .sidebar {
+      position: relative;
+      padding: 18px;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(242, 247, 255, 0.75));
+      border-right: 1px solid var(--border);
+      box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.6);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      z-index: 30;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 14px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(140deg, #66b1ff, var(--accent));
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 10px 22px rgba(74, 144, 226, 0.3);
+      flex-shrink: 0;
+    }
+
+    .brand-meta h1 {
+      font-size: 1rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-meta p {
+      font-size: 0.76rem;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: grid;
+      gap: 6px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      transition: all var(--speed) ease;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.64);
+      border-color: rgba(74, 144, 226, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn.active {
+      background: rgba(74, 144, 226, 0.12);
+      border-color: rgba(74, 144, 226, 0.3);
+      color: #1c3557;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+    }
+
+    .icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: rgba(74, 144, 226, 0.18);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .label {
+      font-size: 0.92rem;
+      font-weight: 520;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .main-area {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 25;
+      height: 74px;
+      margin: 12px 14px 0;
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .toggle-btn,
+    .icon-btn,
+    .action-btn {
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all var(--speed) ease;
+    }
+
+    .toggle-btn,
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.7);
+      color: #4f5f74;
+      font-size: 1rem;
+    }
+
+    .toggle-btn:hover,
+    .icon-btn:hover {
+      background: white;
+      border-color: rgba(74, 144, 226, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--border);
+      padding: 0 12px;
+      height: 44px;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .action-btn {
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: linear-gradient(140deg, #5ca2ed, var(--accent));
+      color: white;
+      font-weight: 620;
+      letter-spacing: 0.01em;
+      box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(74, 144, 226, 0.34);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #c9d8ed, #b5c7e3);
+      color: #29466e;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .page-content {
+      padding: 16px 14px 16px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 280ms ease;
+      height: 100%;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .title-wrap {
+      margin-bottom: 14px;
+      padding: 2px 4px;
+    }
+
+    .title-wrap h2 {
+      font-size: clamp(1.35rem, 2.1vw, 2rem);
+      font-weight: 670;
+      letter-spacing: -0.03em;
+    }
+
+    .title-wrap p {
+      margin-top: 6px;
+      color: rgba(47, 53, 66, 0.74);
+      font-size: 0.95rem;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+      gap: 14px;
+      height: calc(100% - 82px);
+      min-height: 540px;
+    }
+
+    .left-column {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .glass-card {
+      background: var(--glass);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .zone-card {
+      padding: 16px;
+      transition: transform var(--speed) ease, box-shadow var(--speed) ease;
+    }
+
+    .zone-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(26, 45, 74, 0.14);
+    }
+
+    .zone-title {
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(47, 53, 66, 0.58);
+      margin-bottom: 12px;
+      font-weight: 630;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .placeholder {
+      min-height: 92px;
+      border-radius: 14px;
+      border: 1px dashed rgba(74, 144, 226, 0.35);
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.65), rgba(233, 241, 252, 0.5));
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: rgba(47, 53, 66, 0.7);
+      font-size: 0.85rem;
+    }
+
+    .primary-area {
+      height: 100%;
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      padding-right: 2px;
+    }
+
+    .line {
+      height: 58px;
+      border-radius: 12px;
+      border: 1px dashed rgba(74, 144, 226, 0.33);
+      background: rgba(255, 255, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: rgba(47, 53, 66, 0.7);
+      font-size: 0.86rem;
+    }
+
+    .detail-panel {
+      height: 100%;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .chip {
+      border-radius: 10px;
+      background: rgba(74, 144, 226, 0.12);
+      color: #2b588b;
+      font-size: 0.8rem;
+      width: fit-content;
+      padding: 6px 10px;
+    }
+
+    .detail-placeholder {
+      min-height: 86px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px dashed rgba(74, 144, 226, 0.33);
+      padding: 12px;
+      color: rgba(47, 53, 66, 0.68);
+      font-size: 0.86rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .app-shell.sidebar-collapsed .brand-meta,
+    .app-shell.sidebar-collapsed .label {
+      opacity: 0;
+      width: 0;
+      pointer-events: none;
+    }
+
+    .app-shell.sidebar-collapsed .brand,
+    .app-shell.sidebar-collapsed .nav-btn {
+      justify-content: center;
+    }
+
+    .app-shell.sidebar-collapsed .nav-btn {
+      padding-inline: 8px;
+    }
+
+    @media (max-width: 1180px) {
+      .workspace-grid {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+      }
+
+      .detail-panel-wrap {
+        order: 3;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 10px auto 10px 10px;
+        width: min(88vw, 300px);
+        border-radius: 20px;
+        transform: translateX(-120%);
+        transition: transform var(--speed) ease;
+      }
+
+      .app-shell.mobile-sidebar-open .sidebar {
+        transform: translateX(0);
+      }
+
+      .topbar {
+        margin-top: 10px;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .action-btn span {
+        display: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        gap: 8px;
+      }
+
+      .search-wrap {
+        min-width: 0;
+      }
+
+      .icon-btn {
+        display: none;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">LO</div>
+        <div class="brand-meta">
+          <h1>LeaderOS</h1>
+          <p>Governance Intelligence</p>
+        </div>
+      </div>
+      <ul class="nav-list" id="navList"></ul>
+    </aside>
 
-<h1>📞 AI Call Attender</h1>
+    <main class="main-area">
+      <header class="topbar">
+        <button class="toggle-btn" id="sidebarToggle" aria-label="Toggle navigation">☰</button>
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input type="text" placeholder="Search grievances, calls, actions, reports..." />
+        </div>
+        <button class="icon-btn" aria-label="Notifications">🔔</button>
+        <button class="action-btn">＋ <span>Quick Action</span></button>
+        <div class="avatar" title="Leader Profile">LP</div>
+      </header>
 
-<input id="msg" placeholder="Caller message">
+      <section class="page-content" id="pagesMount"></section>
+    </main>
+  </div>
 
-<br><br>
+  <script>
+    const pageMap = [
+      { id: 'dashboard', title: 'Dashboard', description: 'Overview of constituency activity, urgent issues, and operational insights.' },
+      { id: 'grievance-center', title: 'Grievance Center', description: 'Track and manage citizen complaints and resolution progress.' },
+      { id: 'call-intelligence', title: 'Call Intelligence', description: 'Monitor incoming grievance calls and summaries.' },
+      { id: 'whatsapp-ecosystem', title: 'WhatsApp Ecosystem', description: 'View insights from official communication groups.' },
+      { id: 'media-news-monitoring', title: 'Media & News Monitoring', description: 'Track news coverage and public narrative.' },
+      { id: 'action-center', title: 'Action Center', description: 'Assign departments and execute administrative actions.' },
+      { id: 'constituency-insights', title: 'Constituency Insights', description: 'Analyze regional trends and issue distribution.' },
+      { id: 'communication-hub', title: 'Communication Hub', description: 'Broadcast official announcements.' },
+      { id: 'reports-analytics', title: 'Reports & Analytics', description: 'Performance and governance analytics.' },
+      { id: 'settings-profile', title: 'Settings & Profile', description: 'User roles and system configuration.' }
+    ];
 
-<button onclick="callAI()">Simulate Call</button>
+    const navList = document.getElementById('navList');
+    const pagesMount = document.getElementById('pagesMount');
+    const appShell = document.getElementById('appShell');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
-<h3 id="reply"></h3>
+    function createNavAndPages() {
+      pageMap.forEach((page, index) => {
+        const navItem = document.createElement('li');
+        const navButton = document.createElement('button');
+        navButton.className = `nav-btn ${index === 0 ? 'active' : ''}`;
+        navButton.dataset.target = page.id;
+        navButton.innerHTML = `<span class="icon">${String(index + 1).padStart(2, '0')}</span><span class="label">${page.title}</span>`;
+        navButton.addEventListener('click', () => activatePage(page.id));
+        navItem.appendChild(navButton);
+        navList.appendChild(navItem);
 
-<script>
+        const pageNode = document.createElement('article');
+        pageNode.className = `page ${index === 0 ? 'active' : ''}`;
+        pageNode.id = page.id;
+        pageNode.innerHTML = `
+          <div class="title-wrap">
+            <h2>${page.title}</h2>
+            <p>${page.description}</p>
+          </div>
+          <div class="workspace-grid">
+            <div class="left-column">
+              <section class="glass-card zone-card">
+                <h3 class="zone-title">Zone A — Overview Section</h3>
+                <div class="summary-grid">
+                  <div class="placeholder"><strong>Alerts</strong><span>Executive priority placeholder</span></div>
+                  <div class="placeholder"><strong>Counts</strong><span>Operational volume placeholder</span></div>
+                  <div class="placeholder"><strong>Key Metrics</strong><span>Performance indicators placeholder</span></div>
+                </div>
+              </section>
+              <section class="glass-card zone-card primary-area">
+                <h3 class="zone-title">Zone B — Primary Workspace</h3>
+                <div class="line"><span>Structured list / table row placeholder</span><span>→</span></div>
+                <div class="line"><span>Card stack placeholder for workflow tasks</span><span>→</span></div>
+                <div class="line"><span>Activity feed block placeholder</span><span>→</span></div>
+                <div class="line"><span>Scrollable operations workspace placeholder</span><span>→</span></div>
+                <div class="line"><span>Expandable content module placeholder</span><span>→</span></div>
+              </section>
+            </div>
 
-async function callAI(){
+            <aside class="glass-card zone-card detail-panel-wrap">
+              <div class="detail-panel">
+                <h3 class="zone-title">Zone C — Detail Panel Placeholder</h3>
+                <div class="chip">Expandable Side Panel</div>
+                <div class="detail-placeholder">Item details placeholder</div>
+                <div class="detail-placeholder">Notes and annotations placeholder</div>
+                <div class="detail-placeholder">Action controls placeholder</div>
+                <div class="detail-placeholder">History and timeline placeholder</div>
+              </div>
+            </aside>
+          </div>
+        `;
+        pagesMount.appendChild(pageNode);
+      });
+    }
 
-let msg=document.getElementById("msg").value;
+    function activatePage(pageId) {
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.target === pageId);
+      });
 
-let res=await fetch(
-"http://127.0.0.1:8000/call?message="+msg,
-{method:"POST"}
-);
+      document.querySelectorAll('.page').forEach((page) => {
+        page.classList.toggle('active', page.id === pageId);
+      });
 
-let data=await res.json();
+      if (window.innerWidth <= 900) {
+        appShell.classList.remove('mobile-sidebar-open');
+      }
+    }
 
-document.getElementById("reply")
-.innerText=data.ai_response;
+    sidebarToggle.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        appShell.classList.toggle('mobile-sidebar-open');
+      } else {
+        appShell.classList.toggle('sidebar-collapsed');
+      }
+    });
 
-}
-
-</script>
-
+    createNavAndPages();
+  </script>
 </body>
 </html>
