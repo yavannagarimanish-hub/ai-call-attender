@@ -50,10 +50,16 @@ API docs:
 - ReDoc: `http://127.0.0.1:8000/redoc`
 
 ### 3) Try the API
+Preferred (JSON body):
 ```bash
 curl -X POST "http://127.0.0.1:8000/call" \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello, I need appointment details"}'
+```
+
+Legacy compatibility (query parameter):
+```bash
+curl -X POST "http://127.0.0.1:8000/call?message=Hello"
 ```
 
 Example response:
